@@ -51,16 +51,20 @@ const allLanguages = [...new Set(problems.flatMap(p => p.languages))].sort();
       ))}
     </div>
 
-    <!-- Tag filter -->
+    <!-- Tag filter (collapsible) -->
     {allTags.length > 0 && (
-      <div class="flex flex-wrap gap-1.5 mb-6">
-        <span class="text-sm text-gray-500 self-center mr-1">标签：</span>
-        {allTags.map(tag => (
-          <button class="tag-btn text-xs px-2 py-1 rounded border border-gray-200 transition-colors hover:bg-blue-50 hover:border-blue-300" data-value={tag}>
-            {tag}
-          </button>
-        ))}
-      </div>
+      <details class="mb-6">
+        <summary class="text-sm text-gray-500 cursor-pointer select-none">
+          标签筛选（{allTags.length}）
+        </summary>
+        <div class="flex flex-wrap gap-1.5 mt-2">
+          {allTags.map(tag => (
+            <button class="tag-btn text-xs px-2 py-1 rounded border border-gray-200 transition-colors hover:bg-blue-50 hover:border-blue-300" data-value={tag}>
+              {tag}
+            </button>
+          ))}
+        </div>
+      </details>
     )}
 
     <!-- Result count -->

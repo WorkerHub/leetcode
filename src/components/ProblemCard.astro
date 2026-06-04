@@ -11,6 +11,10 @@ export interface Props {
 
 const { number, slug, title, difficulty, tags, languages } = Astro.props;
 
+const visibleTags = tags.slice(0, 3);
+const extraTags = tags.slice(3);
+const hasExtra = extraTags.length > 0;
+
 const difficultyColor = {
   easy: 'text-green-600 bg-green-50 border-green-200',
   medium: 'text-yellow-600 bg-yellow-50 border-yellow-200',
@@ -38,11 +42,25 @@ const difficultyColor = {
     </span>
   </div>
   <div class="mt-2 flex flex-wrap gap-1.5">
-    {tags.map(tag => (
+    {visibleTags.map(tag => (
       <span class="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded">
         {tag}
       </span>
     ))}
+    {hasExtra && (
+      <span class="tag-extra hidden">
+        {extraTags.map(tag => (
+          <span class="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded">
+            {tag}
+          </span>
+        ))}
+      </span>
+    )}
+    {hasExtra && (
+      <button class="tag-toggle text-xs text-blue-500 hover:underline cursor-pointer" type="button">
+        +{extraTags.length}
+      </button>
+    )}
     {languages.map(lang => (
       <span class="text-xs bg-purple-50 text-purple-700 border border-purple-100 px-2 py-0.5 rounded">
         {lang}
@@ -50,3 +68,17 @@ const difficultyColor = {
     ))}
   </div>
 </a>
+
+<script>
+  document.querySelectorAll('.tag-toggle').forEach(btn => {
+    const count = parseInt(btn.textContent);
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const extra = btn.parentElement.querySelector('.tag-extra');
+      const hidden = extra.classList.contains('hidden');
+      extra.classList.toggle('hidden');
+      btn.textContent = hidden ? '-' : '+' + count;
+    });
+  });
+</script>

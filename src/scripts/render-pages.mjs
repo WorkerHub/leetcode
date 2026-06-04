@@ -91,6 +91,7 @@ function buildPage(problem, solutions, cssHref) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>#${problem.number} ${problem.title}</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   ${cssLink}
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen">
