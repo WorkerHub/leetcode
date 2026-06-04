@@ -128,12 +128,13 @@ leetcode-archive/
 
 ### 添加新题目
 
-1. 在对应语言文件夹中创建 Markdown 文件
+1. 在对应语言文件夹中创建 Markdown 文件，命名格式为 `{题号}.{slug}.md`：
    ```
    content/{language}/{number}.{slug}.md
    ```
+   例如：`content/python/1.two-sum.md`
 
-2. 使用 frontmatter 格式：
+2. 文件内容使用 frontmatter 格式：
    ```markdown
    ---
    title: 1.two-sum
@@ -141,21 +142,28 @@ leetcode-archive/
    categories: easy
    tags: [数组, 哈希表]
    ---
-   
+
    ## 题目描述
    ...
    ```
 
-3. 重新构建搜索索引：
+   - `title` 格式为 `{题号}.{slug}`，与文件名一致（不含 `.md`）
+   - `categories` 为 `easy` / `medium` / `hard`
+   - `tags` 为标签数组
+
+3. 构建项目（prebuild → astro build → postbuild 自动串联）：
    ```bash
-   pnpm run build
+   pnpm build
+   ```
+
+4. （可选）更新中文标题映射，支持中文搜索：
+   ```bash
+   node src/scripts/fetch-zh-titles.mjs
    ```
 
 ### 修改样式
 
-编辑 `src/components/` 和 `src/layouts/` 中的 `.astro` 文件。
-
-Tailwind CSS 配置见 `tailwind.config.js`。
+编辑 `src/components/` 和 `src/layouts/` 中的 `.astro` 文件。样式使用 Tailwind CSS v4 原子类，全局配置见 `src/layouts/BaseLayout.astro`。
 
 ### 运行测试
 

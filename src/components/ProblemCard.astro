@@ -4,12 +4,13 @@ export interface Props {
   number: number;
   slug: string;
   title: string;
+  titleZh?: string;
   difficulty: string;
   tags: string[];
   languages: string[];
 }
 
-const { number, slug, title, difficulty, tags, languages } = Astro.props;
+const { number, slug, title, titleZh = '', difficulty, tags, languages } = Astro.props;
 
 const visibleTags = tags.slice(0, 3);
 const extraTags = tags.slice(3);
@@ -28,6 +29,7 @@ const difficultyColor = {
   data-slug={slug}
   data-number={number}
   data-title={title.toLowerCase()}
+  data-title-zh={titleZh}
   data-difficulty={difficulty}
   data-tags={JSON.stringify(tags)}
   data-languages={JSON.stringify(languages)}

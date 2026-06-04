@@ -35,6 +35,28 @@ marked.use(markedHighlight({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Build slug→number map from problems (strips number prefix from internal slug). */
+function buildSlugMap(problems) {
+  const map = {};
+  for (const p of problems) {
+    const cleanSlug = p.slug.replace(/^\d+\./, '');
+    map[cleanSlug] = p.number;
+  }
+  return map;
+}
+
+/** Rewrite leetcode.com problem links: main link → internal, ↗ icon → leetcode. */
+function rewriteLinks(html, slugMap) {
+  return html.replace(
+    /<a href="https:\/\/leetcode\.(?:com|cn)\/problems\/([^/"]+)\/">([^<]*)<\/a>/g,
+    (full, slug, text) => {
+      const num = slugMap[slug];
+      if (!num) return full;
+      return `<a href="/problems/${num}">${text}</a> <a href="https://leetcode.com/problems/${slug}/" class="no-underline opacity-40 hover:opacity-100" title="LeetCode 原题" style="font-size:.75rem">↗</a>`;
+    },
+  );
+}
+
 /** Resolve the CSS file that Astro emitted to dist/_astro/*.css */
 function findBuiltCSS() {
   try {
@@ -116,12 +138,12 @@ function buildPage(problem, solutions, cssHref) {
 
 // ─── Per-problem task ──────────────────────────────────────────────────────────
 
-async function renderOne(problem, cssHref) {
+async function renderOne(problem, cssHref, slugMap) {
   const rawSolutions = loadProblemSolutions(problem.slug, CONTENT_ROOT);
   const solutions = {};
   for (const [lang, sol] of Object.entries(rawSolutions)) {
-    // marked.parse() is sync in marked v14+; use it to avoid async overhead
-    solutions[lang] = marked.parse(sol.content);
+    const rawHtml = marked.parse(sol.content);
+    solutions[lang] = rewriteLinks(rawHtml, slugMap);
   }
   const html = buildPage(problem, solutions, cssHref);
   const dir  = join(DIST_ROOT, 'problems', String(problem.number));
@@ -134,6 +156,7 @@ async function renderOne(problem, cssHref) {
 async function main() {
   const problems = loadProblems(CONTENT_ROOT);
   const cssHref  = findBuiltCSS();
+  const slugMap  = buildSlugMap(problems);
   const total    = problems.length;
 
   console.log(`Rendering ${total} problem pages in batches of ${BATCH_SIZE}...`);
@@ -141,7 +164,7 @@ async function main() {
 
   for (let i = 0; i < total; i += BATCH_SIZE) {
     const batch = problems.slice(i, i + BATCH_SIZE);
-    await Promise.all(batch.map(p => renderOne(p, cssHref)));
+    await Promise.all(batch.map(p => renderOne(p, cssHref, slugMap)));
     process.stdout.write(`\r  ${Math.min(i + BATCH_SIZE, total)}/${total} pages rendered...`);
   }
 

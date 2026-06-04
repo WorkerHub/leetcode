@@ -4,9 +4,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ProblemCard from '../components/ProblemCard.astro';
 import { loadProblems } from '../scripts/content-loader.mjs';
 import { join } from 'path';
+import { readFileSync, existsSync } from 'fs';
 
 const contentRoot = join(process.cwd(), 'content');
 const problems = loadProblems(contentRoot);
+
+// Merge Chinese titles
+const zhTitlesPath = join(process.cwd(), 'public', 'zh-titles.json');
+if (existsSync(zhTitlesPath)) {
+  const zhTitles = JSON.parse(readFileSync(zhTitlesPath, 'utf-8'));
+  for (const p of problems) {
+    p.titleZh = zhTitles[String(p.number)] ?? '';
+  }
+}
 
 // Collect unique values for filter UI
 const allTags = [...new Set(problems.flatMap(p => p.tags))].sort();
@@ -77,6 +87,7 @@ const allLanguages = [...new Set(problems.flatMap(p => p.languages))].sort();
           number={p.number}
           slug={p.slug}
           title={p.title}
+          titleZh={p.titleZh}
           difficulty={p.difficulty}
           tags={p.tags}
           languages={p.languages}
@@ -95,13 +106,14 @@ const allLanguages = [...new Set(problems.flatMap(p => p.languages))].sort();
     element: card,
     number: parseInt((card as HTMLElement).dataset.number ?? '0', 10),
     title: (card as HTMLElement).dataset.title ?? '',
+    titleZh: (card as HTMLElement).dataset.titleZh ?? '',
     difficulty: (card as HTMLElement).dataset.difficulty ?? '',
     tags: JSON.parse((card as HTMLElement).dataset.tags ?? '[]'),
     languages: JSON.parse((card as HTMLElement).dataset.languages ?? '[]'),
   }));
 
   const fuse = new Fuse(corpus, {
-    keys: ['title', 'tags'],
+    keys: ['title', 'titleZh', 'tags'],
     threshold: 0.35,
     ignoreLocation: true,
   });
