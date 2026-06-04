@@ -1,0 +1,57 @@
+---
+// src/components/LanguageTabs.astro
+export interface Props {
+  languages: string[];
+  solutions: Record<string, string>; // lang -> rendered HTML
+}
+
+const { languages, solutions } = Astro.props;
+const defaultLang = languages[0];
+---
+
+<div>
+  <!-- Tab buttons -->
+  <div class="flex gap-1 border-b border-gray-200 mb-4">
+    {languages.map(lang => (
+      <button
+        class="tab-btn px-4 py-2 text-sm font-medium rounded-t border-b-2 transition-colors"
+        data-lang={lang}
+      >
+        {lang.charAt(0).toUpperCase() + lang.slice(1)}
+      </button>
+    ))}
+  </div>
+
+  <!-- Tab panels -->
+  {languages.map(lang => (
+    <div
+      class="tab-panel prose max-w-none"
+      data-lang={lang}
+      set:html={solutions[lang]}
+    />
+  ))}
+</div>
+
+<script define:vars={{ defaultLang }}>
+  const buttons = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.tab-panel');
+
+  function activate(lang) {
+    buttons.forEach(btn => {
+      const active = btn.dataset.lang === lang;
+      btn.classList.toggle('border-blue-500', active);
+      btn.classList.toggle('text-blue-600', active);
+      btn.classList.toggle('border-transparent', !active);
+      btn.classList.toggle('text-gray-500', !active);
+    });
+    panels.forEach(panel => {
+      panel.style.display = panel.dataset.lang === lang ? '' : 'none';
+    });
+  }
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => activate(btn.dataset.lang));
+  });
+
+  activate(defaultLang);
+</script>

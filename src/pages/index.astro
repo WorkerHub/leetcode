@@ -1,0 +1,200 @@
+---
+// src/pages/index.astro
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProblemCard from '../components/ProblemCard.astro';
+import { loadProblems } from '../scripts/content-loader.mjs';
+import { join } from 'path';
+
+const contentRoot = join(process.cwd(), 'content');
+const problems = loadProblems(contentRoot);
+
+// Collect unique values for filter UI
+const allTags = [...new Set(problems.flatMap(p => p.tags))].sort();
+const allLanguages = [...new Set(problems.flatMap(p => p.languages))].sort();
+---
+
+<BaseLayout title="LeetCode 题解查询">
+  <div class="max-w-3xl mx-auto px-4 py-10">
+    <h1 class="text-3xl font-bold text-center mb-2">LeetCode 题解查询</h1>
+    <p class="text-center text-gray-500 mb-8">输入题号或关键词，即时搜索题目解析</p>
+
+    <!-- Search box -->
+    <input
+      id="search-input"
+      type="search"
+      placeholder="输入题号或题目名称..."
+      class="w-full px-4 py-3 rounded-lg border border-gray-300 text-lg focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 mb-4"
+      autocomplete="off"
+    />
+
+    <!-- Difficulty filter -->
+    <div class="flex flex-wrap gap-2 mb-3">
+      <span class="text-sm text-gray-500 self-center mr-1">难度：</span>
+      {['all', 'easy', 'medium', 'hard'].map(d => (
+        <button
+          class="difficulty-btn text-sm px-3 py-1 rounded-full border transition-colors"
+          data-value={d}
+        >
+          {d === 'all' ? '全部' : d.charAt(0).toUpperCase() + d.slice(1)}
+        </button>
+      ))}
+    </div>
+
+    <!-- Language filter -->
+    <div class="flex flex-wrap gap-2 mb-3">
+      <span class="text-sm text-gray-500 self-center mr-1">语言：</span>
+      <button class="lang-btn text-sm px-3 py-1 rounded-full border transition-colors" data-value="all">全部</button>
+      {allLanguages.map(lang => (
+        <button class="lang-btn text-sm px-3 py-1 rounded-full border transition-colors" data-value={lang}>
+          {lang}
+        </button>
+      ))}
+    </div>
+
+    <!-- Tag filter -->
+    {allTags.length > 0 && (
+      <div class="flex flex-wrap gap-1.5 mb-6">
+        <span class="text-sm text-gray-500 self-center mr-1">标签：</span>
+        {allTags.map(tag => (
+          <button class="tag-btn text-xs px-2 py-1 rounded border border-gray-200 transition-colors hover:bg-blue-50 hover:border-blue-300" data-value={tag}>
+            {tag}
+          </button>
+        ))}
+      </div>
+    )}
+
+    <!-- Result count -->
+    <p id="result-count" class="text-sm text-gray-400 mb-4">{problems.length} 道题目</p>
+
+    <!-- Problem list -->
+    <div id="problem-list" class="flex flex-col gap-3">
+      {problems.map(p => (
+        <ProblemCard
+          number={p.number}
+          slug={p.slug}
+          title={p.title}
+          difficulty={p.difficulty}
+          tags={p.tags}
+          languages={p.languages}
+        />
+      ))}
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import Fuse from 'fuse.js';
+
+  // Build corpus from pre-rendered DOM data attributes
+  const cards = Array.from(document.querySelectorAll('[data-slug]'));
+  const corpus = cards.map(card => ({
+    element: card,
+    number: parseInt((card as HTMLElement).dataset.number ?? '0', 10),
+    title: (card as HTMLElement).dataset.title ?? '',
+    difficulty: (card as HTMLElement).dataset.difficulty ?? '',
+    tags: JSON.parse((card as HTMLElement).dataset.tags ?? '[]'),
+    languages: JSON.parse((card as HTMLElement).dataset.languages ?? '[]'),
+  }));
+
+  const fuse = new Fuse(corpus, {
+    keys: ['title', 'tags'],
+    threshold: 0.35,
+    ignoreLocation: true,
+  });
+
+  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+  const resultCount = document.getElementById('result-count') as HTMLElement;
+
+  let activeFilters = {
+    difficulty: 'all',
+    language: 'all',
+    tags: [] as string[],
+  };
+
+  function applySearch() {
+    const query = searchInput.value.trim();
+
+    // Determine matched items from text search
+    let matched: typeof corpus;
+    if (!query) {
+      matched = corpus;
+    } else if (/^\d+$/.test(query)) {
+      // Exact number match
+      const num = parseInt(query, 10);
+      matched = corpus.filter(p => p.number === num);
+    } else {
+      matched = fuse.search(query).map(r => r.item);
+    }
+
+    // Apply filters
+    if (activeFilters.difficulty !== 'all') {
+      matched = matched.filter(p => p.difficulty === activeFilters.difficulty);
+    }
+    if (activeFilters.language !== 'all') {
+      matched = matched.filter(p => p.languages.includes(activeFilters.language));
+    }
+    if (activeFilters.tags.length > 0) {
+      matched = matched.filter(p =>
+        activeFilters.tags.every(t => p.tags.includes(t))
+      );
+    }
+
+    const matchedSet = new Set(matched.map(p => p.element));
+    cards.forEach(card => {
+      (card as HTMLElement).style.display = matchedSet.has(card) ? '' : 'none';
+    });
+
+    resultCount.textContent = `${matched.length} 道题目`;
+  }
+
+  // Search input handler
+  searchInput.addEventListener('input', applySearch);
+
+  // Difficulty buttons
+  document.querySelectorAll('.difficulty-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeFilters.difficulty = (btn as HTMLElement).dataset.value ?? 'all';
+      document.querySelectorAll('.difficulty-btn').forEach(b =>
+        b.classList.toggle('bg-blue-500', b === btn)
+      );
+      document.querySelectorAll('.difficulty-btn').forEach(b =>
+        b.classList.toggle('text-white', b === btn)
+      );
+      applySearch();
+    });
+  });
+
+  // Language buttons
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeFilters.language = (btn as HTMLElement).dataset.value ?? 'all';
+      document.querySelectorAll('.lang-btn').forEach(b =>
+        b.classList.toggle('bg-blue-500', b === btn)
+      );
+      document.querySelectorAll('.lang-btn').forEach(b =>
+        b.classList.toggle('text-white', b === btn)
+      );
+      applySearch();
+    });
+  });
+
+  // Tag toggle buttons (multi-select)
+  document.querySelectorAll('.tag-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tag = (btn as HTMLElement).dataset.value ?? '';
+      const idx = activeFilters.tags.indexOf(tag);
+      if (idx === -1) {
+        activeFilters.tags.push(tag);
+        btn.classList.add('bg-blue-500', 'text-white', 'border-blue-500');
+      } else {
+        activeFilters.tags.splice(idx, 1);
+        btn.classList.remove('bg-blue-500', 'text-white', 'border-blue-500');
+      }
+      applySearch();
+    });
+  });
+
+  // Initialize default button states (highlight "all" buttons)
+  document.querySelector('.difficulty-btn[data-value="all"]')?.classList.add('bg-blue-500', 'text-white');
+  document.querySelector('.lang-btn[data-value="all"]')?.classList.add('bg-blue-500', 'text-white');
+</script>

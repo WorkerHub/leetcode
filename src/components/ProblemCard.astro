@@ -1,0 +1,52 @@
+---
+// src/components/ProblemCard.astro
+export interface Props {
+  number: number;
+  slug: string;
+  title: string;
+  difficulty: string;
+  tags: string[];
+  languages: string[];
+}
+
+const { number, slug, title, difficulty, tags, languages } = Astro.props;
+
+const difficultyColor = {
+  easy: 'text-green-600 bg-green-50 border-green-200',
+  medium: 'text-yellow-600 bg-yellow-50 border-yellow-200',
+  hard: 'text-red-600 bg-red-50 border-red-200',
+}[difficulty] ?? 'text-gray-600 bg-gray-50 border-gray-200';
+---
+
+<a
+  href={`/problems/${number}`}
+  class="block bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-400 hover:shadow-sm transition-all"
+  data-slug={slug}
+  data-number={number}
+  data-title={title.toLowerCase()}
+  data-difficulty={difficulty}
+  data-tags={JSON.stringify(tags)}
+  data-languages={JSON.stringify(languages)}
+>
+  <div class="flex items-center justify-between gap-2">
+    <div class="flex items-center gap-3 min-w-0">
+      <span class="text-gray-400 font-mono text-sm shrink-0">#{number}</span>
+      <span class="font-medium truncate">{title}</span>
+    </div>
+    <span class={`text-xs font-medium px-2 py-0.5 rounded border shrink-0 ${difficultyColor}`}>
+      {difficulty}
+    </span>
+  </div>
+  <div class="mt-2 flex flex-wrap gap-1.5">
+    {tags.map(tag => (
+      <span class="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded">
+        {tag}
+      </span>
+    ))}
+    {languages.map(lang => (
+      <span class="text-xs bg-purple-50 text-purple-700 border border-purple-100 px-2 py-0.5 rounded">
+        {lang}
+      </span>
+    ))}
+  </div>
+</a>

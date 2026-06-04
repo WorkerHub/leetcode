@@ -1,0 +1,30 @@
+# Build output
+dist/
+.astro/
+
+# Dependencies
+node_modules/
+
+# Generated at build time
+public/search-index.json
+
+# OS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Windows
+Thumbs.db
+
+# Test coverage
+coverage/
+*.lcov

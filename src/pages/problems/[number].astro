@@ -1,0 +1,74 @@
+---
+// src/pages/problems/[number].astro
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LanguageTabs from '../../components/LanguageTabs.astro';
+import { loadProblems, loadProblemSolutions } from '../../scripts/content-loader.mjs';
+import { marked } from 'marked';
+import { markedHighlight } from 'marked-highlight';
+import hljs from 'highlight.js';
+import { join } from 'path';
+
+// Configure marked with syntax highlighting
+marked.use(markedHighlight({
+  langPrefix: 'hljs language-',
+  highlight(code, lang) {
+    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+    return hljs.highlight(code, { language }).value;
+  },
+}));
+
+export async function getStaticPaths() {
+  // Problem pages are rendered by src/scripts/render-pages.mjs (postbuild).
+  // Astro does not generate any of these pages to avoid memory exhaustion
+  // with 3901 problems.  The custom script is Hugo-inspired: it initialises
+  // marked/hljs once and processes pages in parallel batches.
+  return [];
+}
+
+const { problem, contentRoot } = Astro.props;
+const rawSolutions = loadProblemSolutions(problem.slug, contentRoot);
+
+// Render each language's MD content to HTML
+const solutions: Record<string, string> = {};
+for (const [lang, sol] of Object.entries(rawSolutions)) {
+  solutions[lang] = await marked(sol.content);
+}
+
+const difficultyColor = {
+  easy: 'text-green-600 bg-green-50 border-green-200',
+  medium: 'text-yellow-600 bg-yellow-50 border-yellow-200',
+  hard: 'text-red-600 bg-red-50 border-red-200',
+}[problem.difficulty] ?? 'text-gray-600 bg-gray-50 border-gray-200';
+---
+
+<BaseLayout title={`#${problem.number} ${problem.title}`}>
+  <div class="max-w-3xl mx-auto px-4 py-8">
+    <!-- Back link -->
+    <a href="/" class="text-blue-500 hover:underline text-sm mb-6 inline-block">← 返回列表</a>
+
+    <!-- Problem header -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold mb-3">
+        <span class="text-gray-400 font-mono mr-2">#{problem.number}</span>
+        {problem.title}
+      </h1>
+      <div class="flex flex-wrap gap-2 items-center">
+        <span class={`text-sm font-medium px-2.5 py-0.5 rounded border ${difficultyColor}`}>
+          {problem.difficulty}
+        </span>
+        {problem.tags.map(tag => (
+          <span class="text-sm bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-0.5 rounded">
+            {tag}
+          </span>
+        ))}
+      </div>
+    </div>
+
+    <!-- Solution content -->
+    {problem.languages.length > 1 ? (
+      <LanguageTabs languages={problem.languages} solutions={solutions} />
+    ) : (
+      <div class="prose max-w-none" set:html={solutions[problem.languages[0]]} />
+    )}
+  </div>
+</BaseLayout>
