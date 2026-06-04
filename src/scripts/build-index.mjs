@@ -1,6 +1,6 @@
 // src/scripts/build-index.mjs
-import { writeFileSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { loadProblems } from './content-loader.mjs';
 
@@ -9,6 +9,7 @@ const DEFAULT_OUTPUT = join(process.cwd(), 'public', 'search-index.json');
 
 export function writeIndex(contentRoot, outputPath) {
   const problems = loadProblems(contentRoot);
+  mkdirSync(dirname(outputPath), { recursive: true });
   writeFileSync(outputPath, JSON.stringify(problems, null, 2), 'utf-8');
   console.log(`Generated search index: ${problems.length} problems → ${outputPath}`);
 }
