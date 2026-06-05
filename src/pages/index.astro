@@ -80,7 +80,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-3 min-w-0">
             <span class="text-gray-400 font-mono text-sm shrink-0">#${p.number}</span>
-            <span class="font-medium truncate">${p.title}</span>
+            <div class="min-w-0">
+              <span class="font-medium truncate block">${p.titleZh || p.title}</span>
+              ${p.titleZh ? `<span class="text-xs text-gray-400 truncate block">${p.title}</span>` : ''}
+            </div>
           </div>
           <span class="text-xs font-medium px-2 py-0.5 rounded border shrink-0 ${difficultyStyle(p.difficulty)}">${p.difficulty}</span>
         </div>
